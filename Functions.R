@@ -1,10 +1,14 @@
-#convert JSON format in a dataframe function
+# Generic functions
+
+
+#convert Orthodb JSON format in a dataframe 
 myParseOrthoFastaNames<-function(x)
 {
-  regex='^(\\S+)\\s+(\\{.*\\})'    #(id) (def) /def is in JSON format: {...}/
-  id<-sub(regex,'\\1',x)         #vector of ids
-  def<-sub(regex,'\\2\\',x)  #vector of def (add missing {...})        
-  df<-do.call(rbind.data.frame,lapply(def,fromJSON)) #apply fromJSON to def, convert in a dataframe 
+  x<-gsub('[{}]','',x)
+  regex='^(\\S+)\\s+(.*)'       #(id) (def) /def is in JSON format: {...}/
+  id<-sub(regex,'\\1',x)        #vector of ids
+  def<-sub(regex,'\\{\\2\\}',x) #vector of def (adding {...})
+  df<-do.call(dplyr::bind_rows,lapply(def,fromJSON)) #apply fromJSON to def, convert in a dataframe 
   return(data.frame("seq_id"=id, df))
 }    
 

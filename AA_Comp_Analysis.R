@@ -1,26 +1,29 @@
-#Retrieve Orthogroup information and FASTA sequences from OrthoDB using API
-#(see https://www.orthodb.org/orthodb_userguide.html#api )
+#Calculate AA composition in orthogroups
+#determine significant changes across taxonomic groups 
+#(e.g. Sauropsida, Mammalia, Actinopterygii)
 
-library(rjson)
+library(RJSONIO)
 library(Biostrings)
 library(dplyr)
+
 source("Functions.R")
 
-
-#Calculate AA composition in orthogroups
-#determine significant changes across vertebrate groups: Sauropsida, Mammalia, Actinopterygii
-
 Tax=list(id=c(8457,40674,7898),name=c("Sauropsida","Mammalia","Actinopterygii"))
+#Tax=list(id=c(4751,33208,3193),name=c("Fungi","Metazoa","Embryophita"))
+#Tax=list(id=c(7742,1206794),name=c("Vertebrate","Invertebrate"))
 
 AA_Comp_nofilter<-data.frame() # main dataframe
+
 myList<-list()
 
 for(n in Tax$name){
+  #fname<-paste0("Analysis_FME/data/",n,".fa")
+  #fname<-paste0("Analysis_IV/data/",n,".fa")
   fname<-paste0("data/",n,".fa")
   seq<-readAAStringSet(fname)
   f<-alphabetFrequency(seq)
-  
-  df<-data.frame("Classification"=n,myParseOrthoFastaNames(names(seq)),"width"=width(seq),"seq_seq"=seq, f)
+  header<-myParseOrthoFastaNames(names(seq))
+  df<-data.frame("Classification"=n,header,"width"=width(seq),"seq_seq"=seq, f)
   myList[[length(myList)+1]] <- df #add df to myList
   print(paste(n,length(seq),"sequences"))
 }
@@ -78,11 +81,11 @@ Res<-data.frame(Res[,1],
 
 #Limit p-value<=1e-16 and fold change (abs value)>=1
 
-Res<-Res%>%mutate(Pvalue.pass= Sauropsida.Mammalia.pvalue<=1e-16 | 
-                     Sauropsida.Actinopterygii.pvalue<=1e-16 | 
-                     Mammalia.Actinopterygii.pvalue<=1e-16,  
-                   FC.pass= abs(Sauropsida.Mammalia.fold_change)>=1 | 
-                     abs(Sauropsida.Actinopterygii.fold_change)>=1 | 
-                     abs(Mammalia.Actinopterygii.fold_change)>=1)
+#Res<-Res%>%mutate(Pvalue.pass= Sauropsida.Mammalia.pvalue<=1e-16 | 
+#                    Sauropsida.Actinopterygii.pvalue<=1e-16 | 
+#                    Mammalia.Actinopterygii.pvalue<=1e-16,  
+#                    FC.pass= abs(Sauropsida.Mammalia.fold_change)>=1 | 
+#                    abs(Sauropsida.Actinopterygii.fold_change)>=1 | 
+#                    abs(Mammalia.Actinopterygii.fold_change)>=1)
 
 write.csv(Res, file = "Res.csv", row.names=FALSE)
